@@ -20,7 +20,7 @@ class Task(Base):
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-engine = create_async_engine(DATABASE_URL, echo=True)
+engine = create_async_engine(DATABASE_URL, echo=True,connect_args={"check_same_thread": False})
 
 async_sessionmaker = async_sessionmaker(engine, expire_on_commit=False)
 
@@ -29,5 +29,9 @@ async def create_db_and_tables():
         await conn.run_sync(Base.metadata.create_all)
 
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
+    async with async_sessionmaker() as session:
+        yield session
+
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
     async with async_sessionmaker() as session:
         yield session
