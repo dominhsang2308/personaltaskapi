@@ -45,5 +45,18 @@ async def delete_task_by_id(task_id:uuid.UUID, db:AsyncSession = Depends(get_db)
         raise HTTPException(status_code=404, detail="Not found")
     await db.commit()
     return {"Message":"Task delete sucessfully" }
+
+
+@app.put("/tasks/{task_id}", response_model=TaskResponse)
+async def update_task_by_id(task_id:uuid.UUID, db:AsyncSession = Depends(get_db), task:CreateTask = None):
+    results = await db.execute(select(Task).where(Task.id == task_id))
+    existing_task = results.scalars().first()
+    if not existing_task:
+        raise HTTPException(status_code=404, detail="Not found")
+    existing_task.title = task.title
+    existing_task.description = task.description
+    await db.commit()
+    await db.refresh(existing_task)
+    return existing_task
     
 
