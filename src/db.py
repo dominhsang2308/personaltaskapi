@@ -29,7 +29,7 @@ class Task(Base):
 
     user = relationship("User", back_populates="tasks")
 
-engine = create_async_engine(DATABASE_URL, echo=True,connect_args={"check_same_thread": False})
+engine = create_async_engine(DATABASE_URL, echo=True)
 
 async_sessionmaker = async_sessionmaker(engine, expire_on_commit=False)
 
