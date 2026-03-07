@@ -9,7 +9,9 @@ from sqlalchemy.orm import DeclarativeBase, relationship
 
 from fastapi_users.db import SQLAlchemyBaseUserTable, SQLAlchemyUserDatabase , SQLAlchemyBaseUserTableUUID
 
-DATABASE_URL = "sqlite+aiosqlite:///./test.db"
+from src.config import settings
+
+DATABASE_URL = settings.DATABASE_URL
 
 class Base(DeclarativeBase):
     id = Column(UUID, primary_key=True, default=uuid.uuid4)
