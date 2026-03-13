@@ -1,13 +1,13 @@
 import uuid
 from typing import Optional
 from fastapi import Depends, Request
-from fastapi_users import BaseUserManager, FastAPIUsers, UUIDIDMixin, models
+from fastapi_users import BaseUserManager, FastAPIUsers, UUIDIDMixin
 from fastapi_users.authentication import (
     AuthenticationBackend,
     BearerTransport,
     JWTStrategy,
 )
-from fastapi_users_db_sqlalchemy import SQLAlchemyBaseUserTableUUID, SQLAlchemyUserDatabase, SQLAlchemyBaseUserTable
+from fastapi_users.db import BeanieUserDatabase
 from src.db import User, get_user_db
 from src.config import settings
 
@@ -29,7 +29,7 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
     async def on_after_request_verify(self, user, token, request = None):
         return await super().on_after_request_verify(user, token, request)
 
-async def get_user_manager(user_db:SQLAlchemyUserDatabase = Depends(get_user_db)):
+async def get_user_manager(user_db: BeanieUserDatabase = Depends(get_user_db)):
     yield UserManager(user_db)
 
 
@@ -46,4 +46,5 @@ auth_backend = AuthenticationBackend(
 )
 
 fastapi_users = FastAPIUsers[User, uuid.UUID](get_user_manager, auth_backends=[auth_backend])
-current_activate_user = fastapi_users.current_user(active=True)
+current_active_user = fastapi_users.current_user(active=True)
+current_superuser = fastapi_users.current_user(active=True, superuser=True)

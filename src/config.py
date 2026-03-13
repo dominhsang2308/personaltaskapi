@@ -1,10 +1,11 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
-    PROJECT_NAME: str = "Personal Task API"
+    PROJECT_NAME: str = "Task Management API"
     
     # Database
-    DATABASE_URL: str
+    MONGODB_URL: str
+    REDIS_URL: str = "redis://localhost:6379"
     
     # Auth
     SECRET_KEY: str

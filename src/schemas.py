@@ -11,15 +11,18 @@ class CreateTask(BaseModel):
     title: str
     description: str
 
-class TaskResponse(BaseModel):  # hoặc TaskOut, TaskCreate nếu bạn dùng
+class TaskResponse(BaseModel):
     id: uuid.UUID
     title: str
     description: Optional[str] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)   # ← đúng cách
-    updated_at: datetime = Field(default_factory=datetime.utcnow)   # ← đúng cách
+    status: str = "todo"
+    user_id: uuid.UUID
+    project: Optional[uuid.UUID] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
 
-    class Config:  # hoặc model_config ở v2.5+
-        from_attributes = True  # nếu trả về từ ORM
+    class Config:
+        from_attributes = True
 
 
 class UserRead(schemas.BaseUser[uuid.UUID]):

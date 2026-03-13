@@ -1,23 +1,37 @@
-# personal_task_api
+# Task Management API
 
-A small Flask-based personal task API.
+A modern FastAPI-based Personal Task API using MongoDB and Redis.
 
-Quick start
+## Features
+- **Architecture**: Distributed system (FastAPI + MongoDB + Redis).
+- **Authentication**: JWT-based auth via FastAPI-Users.
+- **Database**: Document-oriented storage with Beanie ODM.
+- **Caching**: Performance optimization using Redis.
+- **Advanced API**: Pagination, filtering, sorting, and task statistics.
 
-1. Create a virtual environment and install dependencies:
+## Setup & Running
 
-```
-python -m venv venv
-venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-```
+### Using Docker (Recommended)
+The easiest way to run the entire stack (API, MongoDB, Redis) is using Docker Compose:
 
-2. Run the app:
+1. Clone the repository.
+2. Run:
+   ```bash
+   docker-compose up --build
+   ```
+3. The API will be available at: `http://localhost:8000`
+4. Documentation (Swagger): `http://localhost:8000/docs`
 
-```
-python main.py
-```
+### Local Setup
+1. Create a virtual environment: `python -m venv venv`
+2. Activate it: `venv\Scripts\activate`
+3. Install dependencies: `pip install -r requirements.txt`
+4. Set up environment variables in `.env`:
+   - `MONGODB_URL`: mongodb://localhost:27017/taskapi
+   - `REDIS_URL`: redis://localhost:6379
+   - `SECRET_KEY`: your_secret_key
+5. Run the app: `python main.py`
 
-3. Tests / database
-
-The project includes `test.db` — be sure to add it to `.gitignore` before pushing if you don't want it tracked.
+## Documentation
+- [Architecture Design](file:///C:/Users/minhs/.gemini/antigravity/brain/6ba66ddb-022a-4dcf-8f17-b719499afeb2/architecture.md)
+- [Migration Walkthrough](file:///C:/Users/minhs/.gemini/antigravity/brain/6ba66ddb-022a-4dcf-8f17-b719499afeb2/walkthrough.md)

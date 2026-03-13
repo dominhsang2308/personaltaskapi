@@ -3,13 +3,13 @@ from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 
 from .schemas import UserCreate, UserRead, UserUpdate
-from .db import create_db_and_tables
+from .db import init_db
 from src.user import auth_backend, fastapi_users
 from src.routes import tasks
 
 @asynccontextmanager
 async def lifespan(app:FastAPI):
-    await create_db_and_tables()
+    await init_db()
     yield
 
 app = FastAPI(lifespan=lifespan)
