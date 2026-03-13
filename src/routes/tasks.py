@@ -6,8 +6,7 @@ from src.db import Task, User
 from src.user import current_active_user
 from src.crud import task as crud_task
 
-# Creating router. 
-router = APIRouter(prefix="/tasks", tags=["tasks"])
+router = APIRouter(prefix="/tasks", tags=["Tasks"])
 
 @router.post("/", response_model=TaskResponse, status_code=201)
 async def create_task(task: CreateTask, current_user: User = Depends(current_active_user)):

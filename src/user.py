@@ -7,7 +7,7 @@ from fastapi_users.authentication import (
     BearerTransport,
     JWTStrategy,
 )
-from fastapi_users.db import BeanieUserDatabase
+from fastapi_users_db_beanie import BeanieUserDatabase
 from src.db import User, get_user_db
 from src.config import settings
 

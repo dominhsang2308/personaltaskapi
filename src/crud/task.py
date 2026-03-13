@@ -25,7 +25,7 @@ async def get_tasks(
     return await query.sort(sort_by).skip(skip).limit(limit).to_list()
 
 async def get_task_by_id(task_id: uuid.UUID, user_id: uuid.UUID) -> Optional[Task]:
-    # Redis Cache-aside Pattern
+    # Cache-aside to minimize DB Hits
     cache_key = f"task:{task_id}"
     cached_task = await redis_client.get(cache_key)
     if cached_task:
@@ -33,20 +33,28 @@ async def get_task_by_id(task_id: uuid.UUID, user_id: uuid.UUID) -> Optional[Tas
 
     task = await Task.find_one(Task.id == task_id, Task.user_id == user_id, fetch_links=True)
     if task:
-        # Cache for 60 seconds
         await redis_client.setex(cache_key, 60, task.model_dump_json())
     return task
 
 async def create_task(task: CreateTask, user_id: uuid.UUID) -> Task:
+    # Verify project ownership if provided
+    if task.project_id:
+        project = await Project.find_one(Project.id == task.project_id, Project.user_id == user_id)
+        if not project:
+            from fastapi import HTTPException
+            raise HTTPException(status_code=400, detail="Invalid project_id or unauthorized")
+
     new_task = Task(
+        id=uuid.uuid4(),
         title=task.title, 
         description=task.description, 
         user_id=user_id,
-        status="todo"
+        status="todo",
+        project=task.project_id
     )
     await new_task.insert()
     
-    # Redis Pub/Sub Event System
+    # Notify event system
     event = {
         "event": "task.created",
         "task_id": str(new_task.id),
@@ -61,9 +69,17 @@ async def update_task(task_id: uuid.UUID, task_update: CreateTask, user_id: uuid
     existing_task = await get_task_by_id(task_id, user_id)
     if not existing_task:
         return None
-        
+
+    # Verify project ownership if provided
+    if task_update.project_id:
+        project = await Project.find_one(Project.id == task_update.project_id, Project.user_id == user_id)
+        if not project:
+            from fastapi import HTTPException
+            raise HTTPException(status_code=400, detail="Invalid project_id or unauthorized")
+
     existing_task.title = task_update.title
     existing_task.description = task_update.description
+    existing_task.project = task_update.project_id
     existing_task.updated_at = datetime.utcnow()
     
     await existing_task.save()
@@ -88,10 +104,21 @@ async def get_task_stats(user_id: uuid.UUID):
     ]
     return await Task.aggregate(pipeline).to_list()
 
-# Example: Simple Event Consumer
+# Background worker for events
 async def task_event_consumer():
     pubsub = redis_client.pubsub()
     await pubsub.subscribe("task_events")
-    async for message in pubsub.listen():
-        if message["type"] == "message":
-            print(f"Received Event: {message['data']}")
+    
+    print("Listening for task events...")
+    try:
+        async for message in pubsub.listen():
+            if message["type"] == "message":
+                try:
+                    data = json.loads(message["data"])
+                    print(f"-> Event: {data.get('event')} (ID: {data.get('task_id')})")
+                except:
+                    pass
+    except Exception as e:
+        print(f"Consumer Error: {e}")
+    finally:
+        await pubsub.unsubscribe("task_events")

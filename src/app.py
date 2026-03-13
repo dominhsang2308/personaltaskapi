@@ -1,8 +1,12 @@
 import asyncio
+from contextlib import asynccontextmanager
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from src.db import init_db
 from src.user import auth_backend, fastapi_users
 from src.routes import tasks, projects
 from src.crud.task import task_event_consumer
+from src.schemas import UserRead, UserCreate, UserUpdate
 
 @asynccontextmanager
 async def lifespan(app:FastAPI):
@@ -33,5 +37,6 @@ app.include_router(fastapi_users.get_reset_password_router(), prefix="/auth", ta
 app.include_router(fastapi_users.get_verify_router(UserRead), prefix="/auth", tags=["auth"])
 
 app.include_router(tasks.router)
+app.include_router(projects.router)
     
 
