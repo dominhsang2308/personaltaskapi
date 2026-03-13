@@ -1,15 +1,14 @@
-from fastapi import FastAPI
-from contextlib import asynccontextmanager
-from fastapi.middleware.cors import CORSMiddleware
-
-from .schemas import UserCreate, UserRead, UserUpdate
-from .db import init_db
+import asyncio
+from src.db import init_db
 from src.user import auth_backend, fastapi_users
-from src.routes import tasks
+from src.routes import tasks, projects
+from src.crud.task import task_event_consumer
 
 @asynccontextmanager
 async def lifespan(app:FastAPI):
     await init_db()
+    # Start background consumer
+    asyncio.create_task(task_event_consumer())
     yield
 
 app = FastAPI(lifespan=lifespan)

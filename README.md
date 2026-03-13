@@ -32,6 +32,4 @@ The easiest way to run the entire stack (API, MongoDB, Redis) is using Docker Co
    - `SECRET_KEY`: your_secret_key
 5. Run the app: `python main.py`
 
-## Documentation
-- [Architecture Design](file:///C:/Users/minhs/.gemini/antigravity/brain/6ba66ddb-022a-4dcf-8f17-b719499afeb2/architecture.md)
-- [Migration Walkthrough](file:///C:/Users/minhs/.gemini/antigravity/brain/6ba66ddb-022a-4dcf-8f17-b719499afeb2/walkthrough.md)
+
