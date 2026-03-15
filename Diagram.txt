@@ -1,0 +1,16 @@
+[ Client ]
+    │
+    │ (1) Gửi Request
+    ▼
+[ FastAPI ] ── (2) Kiểm tra dữ liệu ──▶ [ Redis ] 
+    │                                     (Cache Hit: Nếu có dữ liệu, trả về ngay lập tức)
+    │
+    │ (3) Cache Miss: Nếu Data chưa có ở Redis,
+    │     Tiến hành truy vấn xuống DB chính.
+    ▼
+[ MongoDB ]
+    │
+    │ (4) Trả kết quả lên. FastAPI gửi lại cho Client.
+    │     (5) Đồng thời FastAPI cất một bản nháp vào Redis.
+    ▼
+(Hoàn tất)

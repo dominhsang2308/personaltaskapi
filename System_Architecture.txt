@@ -1,0 +1,16 @@
+[ Client ]  --->  [ FastAPI ]  --->  [ Redis ]
+                                   \
+                                    V
+                               [ MongoDB ]
+
+Cách các thành phần này làm việc với nhau:
+
+Khi Client gửi yêu cầu lên (ví dụ tải danh sách công việc), request đó sẽ đi vào FastAPI đầu tiên. 
+
+Ở đây, FastAPI đóng vai trò điều phối. Thay vì lúc nào cũng chọc thẳng xuống database, nó sẽ có một bước tối ưu là quay sang hỏi Redis trước: "Dữ liệu này có sẵn trong cache không?". 
+
+Sẽ có hai tình huống xảy ra:
+- Nếu Redis báo Có (Cache hit): Redis trả thẳng kết quả về cho FastAPI để gửi lại cho Client ngay lập tức. Cực kỳ nhanh vì Redis lưu trên RAM.
+- Nếu Redis báo Không (Cache miss): Lúc này FastAPI mới tiến hành query xuống MongoDB. Sau khi MongoDB trả kết quả lên, FastAPI không chỉ gửi trả cho Client, mà nó lặp thêm một bước là lưu lại chính kết quả đó vào Redis. Nhờ vậy từ lần thứ hai trở đi, yêu cầu tương tự sẽ được Redis xử lý ngay mà không chạm tới Mongo nữa.
+
+Nói chung, MongoDB là nơi chứa dữ liệu vĩnh viễn và đảm bảo tính toàn vẹn, còn Redis đứng chặn ở giữa làm vùng đệm để hấp thụ các lượt đọc lặp đi lặp lại nhằm giảm tải cho hệ thống.

@@ -1,0 +1,69 @@
+
+Thiết kế Database MongoDB (Database Design)
+
+Hệ thống có 3 bảng (Collections) chính hoạt động xoay quanh người dùng. 
+
+  1. Collection `users` (Quản lý User)
+   Mục đích: Lưu thông tin tài khoản dùng để đăng nhập.
+   Cấu trúc dữ liệu:
+    json
+    {
+      "_id": "UUID-của-user",
+      "email": "user@example.com",
+      "hashed_password": "...",    // Mật khẩu đã mã hoá
+      "is_active": true,
+      "is_superuser": false,
+      "is_verified": false
+    }
+    
+   Index: Đánh Index Unique trên `email` để không ai có thể tạo 2 tài khoản trùng email.
+
+   2. Collection `projects` (Dự án)
+   Mục đích: Lưu các dự án lớn, mỗi dự án này sẽ chứa rất nhiều Task bên trong.
+   Cấu trúc dữ liệu:
+    json
+    {
+      "_id": "UUID-của-project",
+      "name": "Dự án phát triển Backend",
+      "description": "Làm API bằng FastAPI",
+      "owner_id": "UUID-của-user"  // Lưu ID người tạo
+    }
+    
+   Cách thiết kế: Tách Collection riêng và lưu `owner_id` (gọi là Reference). Vì số lượng Project có thể rất nhiều, tách riêng ra giúp việc lấy danh sách Project nhẹ nhàng hơn là gộp chung hết vào một file.
+
+   3. Collection `tasks` (Nhiệm vụ - Trái tim hệ thống)
+   Mục đích: Chứa các công việc cụ thể.
+   Cấu trúc dữ liệu:
+    json
+    {
+      "_id": "UUID-của-task",
+      "title": "Cài đặt MongoDB",
+      "description": "Dùng Beanie ODM để connect",
+      "status": "todo",            // todo / in_progress / done
+      "user_id": "UUID-của-user",  // ID user sở hữu task
+      "project_id": "UUID-project",// ID project chứa task
+      "created_at": "2024-03-15T...",
+      "updated_at": "2024-03-15T...",
+      "comments": [                // <--- Mảng chứa comment (Embedded)
+        {
+          "user_id": "UUID-của-người-comment",
+          "content": "Sếp ơi task này em done rồi nhé",
+          "created_at": "..."
+        }
+      ]
+    }
+    
+
+Cơ sở chọn Schema và Index (Giải thích cho người mới):
+
+1. Khi nào dùng Embedded (Gộp chung) và Reference (Tách riêng lưu ID):
+- Gộp chung (Embedded): Mình áp dụng cho `comments` ở ngay trong dữ liệu `tasks`. Lý do là mảng comment thường không quá dài, và bao giờ xem Task người ta cũng muốn xem luôn mình có comment gì mới không. Cứ gộp chung lại, đọc 1 lần là lấy lên được cả Task lẫn Comment, rất là khỏe cho database.
+- Tách riêng lưu ID (Reference): Mình dùng cách này cho dự án (`project_id`). Bởi vì 1 dự án có thể sinh ra cả nghìn cái Task. Nếu nhét hết 1000 cái task đó vào chung với 1 cục dữ liệu dự án thì file đó sẽ bị phình to quá giới hạn 16MB của Mongo. Tách ra rồi nối bằng ID sẽ an toàn hơn và khi lỡ đổi tên dự án thì mình chỉ cần sửa ở 1 chỗ thôi.
+
+2. Cách cắm Mục lục (Index Strategy):
+Giống như tìm tên người trong sách, không có mục lục thì phải dò từng trang rất mệt (Collection scan). Ở đây mình áp dụng 2 kiểu mục lục:
+- Mục lục 1 trường (Single Index): Chỗ nào lưu ID tham chiếu chéo như `user_id` hay `project_id` thì bắt buộc phải đánh index. Vì API "Lấy danh sách task của ông A" được gọi liên tục, có mục lục thì nó tìm mất có 1 mili-giây.
+- Mục lục nhiều trường (Compound Index): Dùng cho cái tính năng Lọc (Filter). Giả sử user muốn chọn "Task của mình", rồi lọc "Đang làm", rồi xếp "Mới nhất đưa lên đầu". Mình dùng mẹo E-S-R để tạo mục lục ghép:
+    + E (Dấu bằng): Đưa các điều kiện bằng nhau lên trước (`user_id = 1` và `status = đang làm`) để khoanh vùng vũng dữ liệu nhỏ lại.
+    + S (Sắp xếp): Nối tiếp bằng trường ngày tháng (`created_at`) để Mongo không phải nhọc công xếp lại dữ liệu trên RAM.
+    + R (Khoảng): Cuối cùng mới tới mấy cái điều kiện lớn hơn/nhỏ hơn (nếu có).
